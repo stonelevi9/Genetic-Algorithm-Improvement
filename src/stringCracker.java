@@ -1,0 +1,412 @@
+import java.util.Random;
+public class stringCracker {
+	// This is my main method. It first creates a population p1, our target binary string, a generationCounter, an int called fit, a boolean for running our while loop
+	// and a char array for the available characters in our string
+	// Next we initialize p1 by calling initializePop. Then we start our while loop that runs while run == true
+	// Inside it first we have a for loop that iterates through our current population and finds the fitness of each individual in the population
+	// We next check if our fit == 115, which means we have our target and if it does we print out the solution and end the while loop
+	// If we did not find our target, we then create a new population by calling newPop and iterate our generationcount up
+	public static void main (String args[]) {
+		char [] arr = new char[] {'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '!', '?', '.', ',', '"', ' '};
+		String target = "0010101000001101111110101000110101010101100010001001100111110010001111000101111101011001000001100111110000111011010";
+		//population p1 = new population();
+		//p1 = initializePop(p1, 50, target);
+		int generationcount =1;
+		int fit;
+		int noChangeavg = 0;
+		int changeAvg = 0;
+		for(int j= 0; j< 10; j++) {
+			population p1 = new population();
+			p1 = initializePop(p1, 50, target);
+			boolean run = true;
+		while (run == true) {
+			for(int i =0; i<p1.popSize;i++) {
+				fit = fitnessTest(p1.indiv[i], target);
+				if (fit == 115) {
+					noChangeavg += generationcount;
+					System.out.println("Correct solution found at index " + i + " of generation " + generationcount);
+					//System.out.print("String reads as : ");
+					//int [] solution = stringParser(p1.indiv[i].values);
+					//toString(solution, arr);
+					run = false;
+				}
+			}
+			if (run == true) {
+				p1 = newPop(p1, target);
+				generationcount++;
+			}
+		}
+		generationcount = 1;
+	}
+		for(int j= 0; j< 10; j++) {
+			population p1 = new population();
+			p1 = initializePop(p1, 50, target);
+			boolean run = true;
+		while (run == true) {
+			for(int i =0; i<p1.popSize;i++) {
+				fit = fitnessTest(p1.indiv[i], target);
+				if (fit == 115) {
+					changeAvg += generationcount;
+					System.out.println("Correct solution found at index " + i + " of generation " + generationcount);
+					//System.out.print("String reads as : ");
+					//int [] solution = stringParser(p1.indiv[i].values);
+					//toString(solution, arr);
+					run = false;
+				}
+			}
+			if (run == true) {
+				p1 = newPop2(p1, target);
+				generationcount++;
+			}
+		}
+		generationcount = 1;
+	}
+		System.out.println("Average generation count w/o change = " + noChangeavg/10);
+		System.out.println("Average generation count w change = " + changeAvg/10);
+		
+	}
+	// This is my initializePop method. It is responsible for creating our first initial population
+	// It does this by creating a random binary string of the same length as our target string and
+	// then creating an individual in our population with this random binary string until our population is 
+	// up to the size we want and then lastly it return the population.
+	public static population initializePop(population p1, int size, String target) {
+		Random rand = new Random();
+		for (int i =0; i<size; i++) {
+			String values = "";
+			for (int j =0; j<target.length(); j++) {
+				int next = rand.nextInt(2);
+				values+= next;
+			}
+			p1.indiv[i] = new individual(values, 0, false);
+			int fit = fitnessTest(p1.indiv[i], target);
+			p1.indiv[i].fitness = fit;
+		}
+		p1.popSize = size;
+		p1.target = target;
+		return p1;
+	}
+	// This is my newPop method and it is responsible for creating a new generation for our population
+	// It does this by first finding the 5 best candidates in our current population and adds them to our new generation
+	// Next we initialize the rest of our new generation by getting two of our parents and applying crossover to them to create an offspring
+	// Next we take our next generation and randomly apply mutations to them at around a 1% rate
+	// Lastly, we return our new Population
+	public static population newPop(population p1, String target) {
+		population p2 = new population();
+		Random rand = new Random();
+		p2.popSize = 0;
+		p2.target = target;
+		int currentIndex = 0;
+		int maxFitness = 0;
+		for (int i =0; i <p1.popSize/10; i++) {
+			for (int j =0; j <p1.popSize; j++) {
+				if (p1.indiv[j].fitness >= maxFitness && p1.indiv[j].moved == false) {
+					currentIndex = j;
+					maxFitness = p1.indiv[j].fitness;
+				}
+			}
+			p2.indiv[i] = p1.indiv[currentIndex];
+			p2.indiv[i].fitness = maxFitness;
+			p2.popSize++;
+			p1.indiv[currentIndex].moved = true;
+			maxFitness = 0;
+			currentIndex = 0;
+		}
+		for (int i = p2.popSize; i<p2.popSize*10; i++) {
+			int i1 = rand.nextInt(p2.popSize);
+			int i2 = rand.nextInt(p2.popSize);
+			if(!p2.indiv[i1].values.isEmpty() && !p2.indiv[i2].values.isEmpty()) {
+				p2.indiv[i] = crossOver(p2.indiv[i1], p2.indiv[i2], target);
+				
+			}
+			else {
+				i--;
+			}
+		}
+		p2.popSize = p2.popSize*10;
+		int mutationrate = 1;
+		for (int i =0; i<p2.popSize; i++) {
+			int mutation = rand.nextInt(100) +1;
+			if (mutation == mutationrate) {
+				p2.indiv[i].values = mutation(p2.indiv[i]);
+			}
+		}
+		for(int i = 0; i<p2.popSize; i++) {
+			p2.indiv[i].moved = false;
+		}
+		return p2;
+	}
+	
+	public static population newPop2(population p1, String target) {
+		population p2 = new population();
+		Random rand = new Random();
+		p2.popSize = 0;
+		p2.target = target;
+		int currentIndex = 0;
+		int maxFitness = 0;
+		for (int i =0; i <p1.popSize/10; i++) {
+			for (int j =0; j <p1.popSize; j++) {
+				if (p1.indiv[j].fitness >= maxFitness && p1.indiv[j].moved == false) {
+					currentIndex = j;
+					maxFitness = p1.indiv[j].fitness;
+				}
+			}
+			p2.indiv[i] = p1.indiv[currentIndex];
+			p2.indiv[i].fitness = maxFitness;
+			p2.popSize++;
+			p1.indiv[currentIndex].moved = true;
+			maxFitness = 0;
+			currentIndex = 0;
+		}
+		for (int i = p2.popSize; i<p2.popSize*10; i++) {
+			int i1 = rand.nextInt(p2.popSize);
+			int i2 = rand.nextInt(p2.popSize);
+			if(!p2.indiv[i1].values.isEmpty() && !p2.indiv[i2].values.isEmpty()) {
+				p2.indiv[i] = crossOver(p2.indiv[i1], p2.indiv[i2], target);
+				
+			}
+			else {
+				i--;
+			}
+		}
+		p2.popSize = p2.popSize*10;
+		int mutationrate = 1;
+		for (int i =0; i<p2.popSize; i++) {
+			int mutation = rand.nextInt(100) +1;
+			if (mutation == mutationrate) {
+				p2.indiv[i].values = mutation2(p2.indiv[i], target);
+			}
+		}
+		for(int i = 0; i<p2.popSize; i++) {
+			p2.indiv[i].moved = false;
+		}
+		return p2;
+	}
+	// This is my fitnessTest method. It is responsible for determining the fitness of an individual by going through each charAt an index i
+	// in both our target string and our individual's values string and iterating the fitness up by one if the chars match.
+	public static int fitnessTest(individual indiv, String target) {
+		int fitness =0;
+		for (int i = 0; i<indiv.values.length(); i++) {
+			if(indiv.values.charAt(i) == target.charAt(i)) {
+				fitness++;
+			}
+		}
+		return fitness;
+	}
+	// This is our crossOver method and it is responsible for creating an offspring from two parent individuals
+	// It starts by creating some variables such as strings to hold cross sections of our parents
+	// Next we run a while loop that first gets two random index and assigns the bigger one to endIndex and the smaller to beginIndex
+	// Next we iterate through a for loop that takes value between our beginIndex and endIndex and adds them to a string
+	// Next we check to make sure our endIndex is not our last value in our values string and if it is not, we add everything after endIndex to 
+	// a new string. We then check to see that beginIndex != 0 or our first value in values string and if it is not we add everything before beginIndex
+	// to a new string. Lastly, we combine these strings in order in our values string and create a newIndividual with these values and return it
+	public static individual crossOver(individual i1, individual i2, String target) {
+		individual newIndiv = new individual();
+		Random rand = new Random();
+		String values = "";
+		String p1 = "";
+		String p2past = "";
+		String p2first = "";
+		boolean runner = false;
+		int beginIndex =0;
+		int endIndex = 0;
+		while (runner != true) {
+			beginIndex = rand.nextInt(Math.abs(i1.values.length()));
+			endIndex = rand.nextInt(Math.abs(i1.values.length()));
+			int temp;
+			if (endIndex < beginIndex) {
+				temp = endIndex;
+				endIndex = beginIndex;
+				beginIndex = temp;
+				runner = true;
+			}
+			else if (endIndex == beginIndex) {
+				runner = false;
+			}
+			else {
+				runner = true;
+			}
+		}
+		for (int i = beginIndex; i<endIndex; i++) {
+			p1+= i1.values.charAt(i);
+		}
+		if (endIndex < i2.values.length()) {
+			for(int i = endIndex; i<i2.values.length(); i++) {
+				p2past += i2.values.charAt(i);
+			}
+		}
+		if (beginIndex != 0) {
+			for(int i =0; i<beginIndex; i++) {
+				p2first += i2.values.charAt(i);
+			}
+		}
+		values +=p2first;
+		values += p1;
+		values += p2past;
+		newIndiv.values = values;
+		newIndiv.fitness = fitnessTest(newIndiv, target);
+		return newIndiv;
+	}
+	
+	public static individual crossOver2(individual i1, individual i2, String target) {
+		individual newIndiv = new individual();
+		String values = "";
+		String p1 = "";
+		String p2past = "";
+		String p2first = "";
+		int length=0;
+		int currentMaxLength = 0;
+		int beginIndex =0;
+		int endIndex = 0;
+		for (int i = 0; i<i1.values.length(); i++) {
+			if (i1.values.charAt(i) == target.charAt(i)) {
+				while(i< i1.values.length()-1 && i1.values.charAt(i) == target.charAt(i)) {
+					length++;
+					if(length >= currentMaxLength) {
+						endIndex = i;
+					}
+					i++;
+				}
+				currentMaxLength = length;
+				length = 0;
+			}
+		}
+		beginIndex = endIndex - currentMaxLength;
+		
+		for (int i = beginIndex; i<endIndex; i++) {
+			p1+= i1.values.charAt(i);
+		}
+		if (endIndex < i2.values.length()) {
+			for(int i = endIndex; i<i2.values.length(); i++) {
+				p2past += i2.values.charAt(i);
+			}
+		}
+		if (beginIndex != 0) {
+			for(int i =0; i<beginIndex; i++) {
+				p2first += i2.values.charAt(i);
+			}
+		}
+		values +=p2first;
+		values += p1;
+		values += p2past;
+		newIndiv.values = values;
+		newIndiv.fitness = fitnessTest(newIndiv, target);
+		return newIndiv;
+	}
+	// This method is my mutation method and it is responsible for handling mutations on our generations when it is called
+	// It works by first finding a random number of values in our individual's values string and flipping them to the opposite number
+	// and then returning the individual back as a mutated individual
+	public static String mutation (individual i1) {
+		Random rand = new Random();
+		boolean runner = true;
+		int num =0;
+		while (runner == true) {
+			if (!i1.values.isEmpty()) {
+				num = rand.nextInt(Math.abs(i1.values.length()));
+				runner = false;
+			}
+			else {
+				
+			}
+		}
+		String newvalues = "";
+		for (int i=0; i <num; i++) {
+			int bit = rand.nextInt(i1.values.length());
+			if(i1.values.charAt(bit) == '0') {
+				if(bit ==0) {
+					newvalues = "1" + i1.values.substring(bit+1);
+				}
+				else if (bit == i1.values.length()) {
+					newvalues = i1.values.substring(0, i1.values.length()-1) + "1";
+				}
+				else {
+					newvalues = i1.values.substring(0, bit) + "1" + i1.values.substring(bit+1);
+				}
+			}
+			else {
+				if(bit ==0) {
+					
+					newvalues = "0" + i1.values.substring(bit+1);
+				}
+				else if (bit == i1.values.length()) {
+					newvalues = i1.values.substring(0, i1.values.length()-1) + "0";
+				}
+					else{
+				newvalues = i1.values.substring(0, bit) + "0" + i1.values.substring(bit+1);
+				
+				}
+	
+			}
+			
+		}
+		return newvalues;
+	}
+	
+	public static String mutation2 (individual i1, String target) {
+		Random rand = new Random();
+		boolean runner = true;
+		int num =0;
+		while (runner == true) {
+			if (!i1.values.isEmpty()) {
+				num = rand.nextInt(Math.abs(i1.values.length()));
+				runner = false;
+			}
+			else {
+				
+			}
+		}
+		String newvalues = "";
+		for (int i=0; i <num; i++) {
+			int bit = rand.nextInt(i1.values.length());
+			if(i1.values.charAt(bit) != target.charAt(bit)) {
+			if(i1.values.charAt(bit) == '0') {
+				if(bit ==0) {
+					newvalues = "1" + i1.values.substring(bit+1);
+				}
+				else if (bit == i1.values.length()) {
+					newvalues = i1.values.substring(0, i1.values.length()-1) + "1";
+				}
+				else {
+					newvalues = i1.values.substring(0, bit) + "1" + i1.values.substring(bit+1);
+				}
+			}
+			else {
+				if(bit ==0) {
+					
+					newvalues = "0" + i1.values.substring(bit+1);
+				}
+				else if (bit == i1.values.length()) {
+					newvalues = i1.values.substring(0, i1.values.length()-1) + "0";
+				}
+					else{
+				newvalues = i1.values.substring(0, bit) + "0" + i1.values.substring(bit+1);
+				
+				}
+	
+			}
+			}
+		}
+		return newvalues;
+	}
+	// This method is our stringParser method and it is responsible for parsing our binary string and turning it into an array of integers
+	// where each integer corresponds to the index of the value in our char Array and the index corresponds to the position in the string
+	// Lastly, it returns this array
+	public static int [] stringParser (String s1) {
+		int endEx = 5;
+		int startIn= 0;
+		int [] parsed = new int [s1.length()/5];
+		for (int i =0; i<s1.length()/5; i++ ) {
+			parsed[i] = Integer.parseInt(s1.substring(startIn, endEx), 2);
+			startIn = endEx;
+			endEx += 5;
+		}
+		return parsed;
+	}
+	// This method is my toString method and it is responsible for printing out our string once we find it so that the user can see the solution
+	public static void toString (int[] solution, char[] arr) {
+		for (int i = 0; i < solution.length; i++) {
+				System.out.print(arr[solution[i]]);
+		}
+	}
+	
+
+}
